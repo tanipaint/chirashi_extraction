@@ -1,0 +1,64 @@
+{
+  "ocr_errors": {
+    "invalid_image": {
+      "error": {
+        "code": 400,
+        "message": "Invalid image format",
+        "status": "INVALID_ARGUMENT"
+      }
+    },
+    "api_quota_exceeded": {
+      "error": {
+        "code": 429,
+        "message": "Quota exceeded for quota metric 'vision_api_requests'",
+        "status": "RESOURCE_EXHAUSTED"
+      }
+    },
+    "empty_result": {
+      "text_annotations": [],
+      "full_text_annotation": {
+        "text": ""
+      }
+    }
+  },
+  "llm_errors": {
+    "openai_rate_limit": {
+      "error": {
+        "message": "Rate limit reached for requests",
+        "type": "requests",
+        "param": null,
+        "code": "rate_limit_exceeded"
+      }
+    },
+    "anthropic_overloaded": {
+      "type": "error",
+      "error": {
+        "type": "overloaded_error",
+        "message": "Overloaded"
+      }
+    },
+    "invalid_json_response": {
+      "id": "chatcmpl-invalid",
+      "object": "chat.completion",
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "申し訳ございませんが、この画像からは商品情報を抽出できませんでした。"
+          }
+        }
+      ]
+    }
+  },
+  "network_errors": {
+    "connection_timeout": {
+      "error": "Connection timeout after 30 seconds"
+    },
+    "dns_resolution_failed": {
+      "error": "Failed to resolve hostname"
+    },
+    "ssl_certificate_error": {
+      "error": "SSL certificate verification failed"
+    }
+  }
+}

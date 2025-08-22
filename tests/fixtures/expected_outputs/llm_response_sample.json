@@ -1,0 +1,41 @@
+{
+  "openai_response": {
+    "id": "chatcmpl-test123",
+    "object": "chat.completion",
+    "created": 1692901234,
+    "model": "gpt-4o",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "[\n  {\n    \"product\": \"きゅうり3本\",\n    \"price_incl_tax\": 198,\n    \"price_excl_tax\": null,\n    \"unit\": \"3本\",\n    \"category\": \"食品\",\n    \"confidence\": 0.95\n  },\n  {\n    \"product\": \"サントリー天然水 2L\",\n    \"price_incl_tax\": 98,\n    \"price_excl_tax\": 90,\n    \"unit\": \"1本\",\n    \"category\": \"食品\",\n    \"confidence\": 0.92\n  }\n]"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 150,
+      "completion_tokens": 120,
+      "total_tokens": 270
+    }
+  },
+  "anthropic_response": {
+    "id": "msg_test456",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "[\n  {\n    \"product\": \"きゅうり3本\",\n    \"price_incl_tax\": 198,\n    \"price_excl_tax\": null,\n    \"unit\": \"3本\",\n    \"category\": \"食品\",\n    \"confidence\": 0.95\n  },\n  {\n    \"product\": \"サントリー天然水 2L\",\n    \"price_incl_tax\": 98,\n    \"price_excl_tax\": 90,\n    \"unit\": \"1本\",\n    \"category\": \"食品\",\n    \"confidence\": 0.92\n  }\n]"
+      }
+    ],
+    "model": "claude-3-5-sonnet-20241022",
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 145,
+      "output_tokens": 115
+    }
+  }
+}

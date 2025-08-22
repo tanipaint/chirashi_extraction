@@ -1,0 +1,26 @@
+[
+  {
+    "product": "きゅうり3本",
+    "price_incl_tax": 198,
+    "price_excl_tax": null,
+    "unit": "3本",
+    "category": "食品",
+    "confidence": 0.95
+  },
+  {
+    "product": "サントリー天然水 2L",
+    "price_incl_tax": 98,
+    "price_excl_tax": 90,
+    "unit": "1本",
+    "category": "食品",
+    "confidence": 0.92
+  },
+  {
+    "product": "バナナ1房",
+    "price_incl_tax": 158,
+    "price_excl_tax": null,
+    "unit": "1房",
+    "category": "食品",
+    "confidence": 0.88
+  }
+]
