@@ -153,7 +153,10 @@ class TestProductValidator:
             'price_incl_tax': 198,
             'price_excl_tax': 180,
             'unit': '3本',
-            'category': '食品'
+            'category': '食品',
+            'ocr_confidence': 0.85,
+            'extraction_confidence': 0.80,
+            'categorization_confidence': 0.75
         }
         
         result = self.validator.validate_product_data(valid_data)
