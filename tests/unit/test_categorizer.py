@@ -29,12 +29,19 @@ class TestProductCategorizer:
         assert categorizer.CATEGORIES == expected_categories
 
     def test_categorize_product_basic(self):
-        """基本的な商品カテゴリ分類テスト（TDD: 未実装確認）"""
-        with pytest.raises(NotImplementedError, match="T051で実装予定"):
-            self.categorizer.categorize_product("きゅうり3本")
+        """基本的な商品カテゴリ分類テスト"""
+        result = self.categorizer.categorize_product("きゅうり3本")
+        
+        assert isinstance(result, CategoryResult)
+        assert result.category in self.categorizer.CATEGORIES
+        assert 0.0 <= result.confidence <= 1.0
+        assert result.method in ["keyword", "llm", "hybrid", "llm_fallback"]
+        
+        # きゅうりは食品カテゴリに分類されるべき
+        assert result.category == "食品"
 
     def test_categorize_by_keywords_food(self):
-        """キーワードベース食品分類テスト（TDD: 未実装確認）"""
+        """キーワードベース食品分類テスト"""
         food_products = [
             "きゅうり3本",
             "サントリー天然水2L",
@@ -44,11 +51,14 @@ class TestProductCategorizer:
         ]
         
         for product in food_products:
-            with pytest.raises(NotImplementedError, match="T051で実装予定"):
-                self.categorizer.categorize_by_keywords(product)
+            result = self.categorizer.categorize_by_keywords(product)
+            assert isinstance(result, CategoryResult)
+            assert result.category == "食品"
+            assert result.method == "keyword"
+            assert result.confidence > 0.5
 
     def test_categorize_by_keywords_daily_goods(self):
-        """キーワードベース日用品分類テスト（TDD: 未実装確認）"""
+        """キーワードベース日用品分類テスト"""
         daily_products = [
             "洗剤",
             "ティッシュ",
@@ -58,16 +68,23 @@ class TestProductCategorizer:
         ]
         
         for product in daily_products:
-            with pytest.raises(NotImplementedError, match="T051で実装予定"):
-                self.categorizer.categorize_by_keywords(product)
+            result = self.categorizer.categorize_by_keywords(product)
+            assert isinstance(result, CategoryResult)
+            assert result.category == "日用品"
+            assert result.method == "keyword"
+            assert result.confidence > 0.5
 
     def test_categorize_by_llm_basic(self):
-        """LLMベース分類基本テスト（TDD: 未実装確認）"""
-        with pytest.raises(NotImplementedError, match="T051で実装予定"):
-            self.categorizer.categorize_by_llm("サントリー プレミアムモルツ 350ml")
+        """LLMベース分類基本テスト"""
+        result = self.categorizer.categorize_by_llm("サントリー プレミアムモルツ 350ml")
+        
+        assert isinstance(result, CategoryResult)
+        assert result.category in self.categorizer.CATEGORIES
+        assert 0.0 <= result.confidence <= 1.0
+        assert result.method in ["openai", "anthropic", "llm_fallback", "llm_error", "keyword_error"]
 
     def test_batch_categorize_basic(self):
-        """バッチカテゴリ分類基本テスト（TDD: 未実装確認）"""
+        """バッチカテゴリ分類基本テスト"""
         product_list = [
             "きゅうり3本",
             "洗剤",
@@ -76,8 +93,23 @@ class TestProductCategorizer:
             "電池"
         ]
         
-        with pytest.raises(NotImplementedError, match="T051で実装予定"):
-            self.categorizer.batch_categorize(product_list)
+        results = self.categorizer.batch_categorize(product_list)
+        
+        assert isinstance(results, list)
+        assert len(results) == len(product_list)
+        
+        # 各結果の検証
+        for i, result in enumerate(results):
+            assert isinstance(result, CategoryResult)
+            assert result.category in self.categorizer.CATEGORIES
+            assert 0.0 <= result.confidence <= 1.0
+        
+        # 期待されるカテゴリ
+        expected_categories = ["食品", "日用品", "医薬品・化粧品", "衣料品", "家電・雑貨"]
+        actual_categories = [r.category for r in results]
+        
+        # 少なくとも一部は期待されるカテゴリに分類される
+        assert any(cat in expected_categories for cat in actual_categories)
 
     def test_configuration_settings(self):
         """設定項目テスト"""
