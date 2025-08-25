@@ -176,3 +176,6 @@ reports/
 
 # Claude Code specific
 /.claude
+
+# Serena (MCP server) specific
+.serena/
