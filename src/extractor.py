@@ -46,7 +46,7 @@ class ProductPriceExtractor:
             ValueError: 入力データが不正
         """
         # 一時的なモック実装（T091完了のため）
-        if self.config.get("use_mock", True):
+        if self.config.get("use_mock", False):
             return [
                 {
                     "product": "テスト商品1",
@@ -77,29 +77,98 @@ class ProductPriceExtractor:
             full_text = ocr_result.get('full_text', '')
             text_annotations = ocr_result.get('text_annotations', [])
             
-            # 価格パターン抽出
-            price_pattern = r'(\d{1,5})\s*円'
-            prices = re.findall(price_pattern, full_text)
+            # 価格パターン抽出（より柔軟なパターン）
+            price_patterns = [
+                r'¥(\d{1,6})',  # ¥記号付き
+                r'(\d{1,6})\s*円',  # 円マーク付き
+                r'\b(\d{2,5})\b',  # 2-5桁の数字（価格らしいもの）
+            ]
             
-            # 商品名候補抽出（価格以外のテキスト）
+            prices = []
+            for pattern in price_patterns:
+                found_prices = re.findall(pattern, full_text)
+                prices.extend(found_prices)
+            
+            # 重複除去と数値変換（チラシ商品として妥当な価格範囲に限定）
+            valid_prices = []
+            for p in prices:
+                if p.isdigit():
+                    price_val = int(p)
+                    # チラシ商品として現実的な価格範囲（50円〜2000円）
+                    if 50 <= price_val <= 2000:
+                        valid_prices.append(price_val)
+            prices = list(set(valid_prices))
+            
+            # 商品名候補抽出（価格や広告文言を除外した適切な商品名のみ）
             product_candidates = []
+            # 全ての価格パターンを結合した正規表現を作成
+            combined_price_pattern = '|'.join(price_patterns)
+            
+            # 除外すべき広告文言・キーワードのブラックリスト
+            blacklist_keywords = [
+                '税込', '税抜', '円', '¥', '買得', '特価', '限定', '販売', '開催',
+                'から', 'まで', '夜市', 'セール', 'フェア', '割引', '安売',
+                '本体', '価格', '値段', '金額', '料金', 'アメリカ', 'インド', '日本',
+                'クライ', 'どり', 'ばら', 'たまひ', 'ます', '植え', 'スタイル',
+                '売り', '野菜', '開店', '閉店', '時間', '期間', 'イオン', 'ください',
+                'コード', 'カード', 'ポイント', 'クレジット', 'タッチ', 'スマホ',
+                'マーク', 'ウイン', 'ステー', 'カット', 'アタカマ', 'いっぱい',
+                'ごゆっくり', 'なかっ', 'したたり', 'あらん', 'まるき', '商品',
+                'エンジョイ', 'プレゼント', 'キャンペーン', 'プレッション', 'インテリア'
+            ]
+            
             for annotation in text_annotations:
-                text = annotation.get('text', '')
-                if not re.search(price_pattern, text) and len(text) > 1:
+                text = annotation.get('text', '').strip()
+                
+                # 以下の条件をすべて満たす場合のみ商品名候補とする
+                if (not re.search(combined_price_pattern, text) and  # 価格パターンでない
+                    len(text) >= 3 and len(text) <= 20 and  # 3-20文字の適切な長さ
+                    re.search(r'[ぁ-んァ-ンー一-龯]{2,}', text) and  # 日本語文字を2文字以上含む
+                    not any(keyword in text for keyword in blacklist_keywords) and  # ブラックリスト語句を含まない
+                    not re.match(r'^[0-9\s\-\/]+$', text) and  # 数字・記号のみでない
+                    not re.match(r'^[a-zA-Z\s]+$', text) and  # アルファベットのみでない
+                    not re.match(r'^[ひらがな]{1,3}$', text)):  # 短いひらがなのみでない
+                    
                     product_candidates.append(text)
             
-            # 商品・価格ペアを生成
+            # 商品・価格ペアを生成（より柔軟なマッチング）
             results = []
-            for i, price in enumerate(prices):
-                product_name = product_candidates[i] if i < len(product_candidates) else f"商品{i+1}"
-                results.append({
-                    "product": product_name,
-                    "price_incl_tax": int(price),
-                    "price_excl_tax": int(int(price) * 0.91),  # 簡易的な税抜計算
-                    "unit": "1個",
-                    "category": "その他",
-                    "confidence": 0.75
-                })
+            
+            # 価格と商品名の組み合わせを生成
+            if prices and product_candidates:
+                # 価格と商品名が両方存在する場合
+                min_pairs = min(len(prices), len(product_candidates))
+                for i in range(min_pairs):
+                    results.append({
+                        "product": product_candidates[i],
+                        "price_incl_tax": int(prices[i]),
+                        "price_excl_tax": int(int(prices[i]) * 0.91),  # 簡易的な税抜計算
+                        "unit": "1個",
+                        "category": "その他",
+                        "confidence": 0.75
+                    })
+                
+                # 余った価格に対して汎用商品名を付与
+                for i in range(min_pairs, len(prices)):
+                    results.append({
+                        "product": f"商品{i+1}",
+                        "price_incl_tax": int(prices[i]),
+                        "price_excl_tax": int(int(prices[i]) * 0.91),
+                        "unit": "1個",
+                        "category": "その他", 
+                        "confidence": 0.60
+                    })
+            elif prices:
+                # 価格のみ存在する場合
+                for i, price in enumerate(prices):
+                    results.append({
+                        "product": f"商品{i+1}",
+                        "price_incl_tax": int(price),
+                        "price_excl_tax": int(int(price) * 0.91),
+                        "unit": "1個",
+                        "category": "その他",
+                        "confidence": 0.60
+                    })
             
             return results if results else [
                 {

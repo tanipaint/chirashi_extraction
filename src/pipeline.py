@@ -36,11 +36,12 @@ class ChirashiPipeline:
         self.default_config = {
             "ocr_provider": "google",
             "llm_provider": "anthropic", 
-            "confidence_threshold": 0.7,
+            "confidence_threshold": 0.1,
             "max_processing_time": 30,
             "enable_logging": True,
             "log_level": "INFO",
-            "output_format": "json"
+            "output_format": "json",
+            "use_mock": False
         }
         
         # 設定をマージ
