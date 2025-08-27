@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
+from dotenv import load_dotenv
 
 from src.preprocessing import ImagePreprocessor
 from src.ocr_processor import OCRProcessor
@@ -34,7 +35,7 @@ class ChirashiPipeline:
         # デフォルト設定
         self.default_config = {
             "ocr_provider": "google",
-            "llm_provider": "openai", 
+            "llm_provider": "anthropic", 
             "confidence_threshold": 0.7,
             "max_processing_time": 30,
             "enable_logging": True,
@@ -288,6 +289,9 @@ class ChirashiPipeline:
 
 def main():
     """CLIエントリーポイント"""
+    # 環境変数を.envから読み込み
+    load_dotenv()
+    
     parser = argparse.ArgumentParser(
         description="チラシ商品価格抽出システム",
         formatter_class=argparse.RawDescriptionHelpFormatter,
