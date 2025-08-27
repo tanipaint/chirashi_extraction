@@ -133,10 +133,10 @@ class ChirashiPipeline:
                 validation_result = self.validator.validate_product_data(product)
                 if validation_result.is_valid:
                     # 検証結果の信頼度を反映
-                    product["confidence"] = min(product["confidence"], validation_result.confidence)
+                    product["confidence"] = min(product["confidence"], validation_result.confidence_score)
                     validated_products.append(product)
                 else:
-                    logging.warning(f"Product validation failed: {product.get('product', 'Unknown')} - {validation_result.error_messages}")
+                    logging.warning(f"Product validation failed: {product.get('product', 'Unknown')} - {validation_result.validation_errors}")
             
             # 信頼度閾値フィルタリング
             confidence_threshold = self.config.get("confidence_threshold", 0.7)

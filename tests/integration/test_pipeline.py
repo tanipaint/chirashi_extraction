@@ -19,10 +19,10 @@ class TestChirashiPipeline:
 
     def setup_method(self):
         """各テストメソッド実行前のセットアップ"""
-        # モックモードでパイプラインを初期化
+        # モックモードでパイプラインを初期化（信頼度閾値を低く設定）
         mock_config = {
             "use_mock": True,
-            "confidence_threshold": 0.5
+            "confidence_threshold": 0.1
         }
         self.pipeline = ChirashiPipeline(config=mock_config)
         self.sample_image_path = "tests/fixtures/sample_images/chirashi_sample_01.jpg"

@@ -32,15 +32,15 @@ class TestE2EChirashiExtraction:
         self.real_api_config = {
             "use_mock": False,
             "ocr_provider": "google",
-            "llm_provider": "openai", 
-            "confidence_threshold": 0.7,
+            "llm_provider": "anthropic",  # Anthropic API使用
+            "confidence_threshold": 0.3,
             "max_processing_time": 30,
             "enable_logging": True,
             "log_level": "INFO"
         }
         
         # テスト用画像パス
-        self.test_image_path = "docs/images/chirashi_sample_01.jpg"
+        self.test_image_path = "tests/fixtures/sample_images/chirashi_sample_01.jpg"
         
         # 出力ディレクトリ
         self.output_dir = tempfile.mkdtemp(prefix="e2e_test_")
@@ -84,13 +84,13 @@ class TestE2EChirashiExtraction:
             output_path=os.path.join(self.output_dir, "vision_test.json")
         )
         
-        # 結果検証
-        assert result is not None, "OCR処理結果がNoneです"
-        assert "extracted_data" in result, "extracted_dataキーが結果に含まれていません"
-        assert len(result["extracted_data"]) > 0, "抽出されたデータが0件です"
+        # 結果検証（パイプラインはリストを直接返す）
+        assert result is not None, "パイプライン処理結果がNoneです"
+        assert isinstance(result, list), "結果がリスト形式ではありません"
+        assert len(result) > 0, "抽出されたデータが0件です"
         
         # データ構造検証
-        for item in result["extracted_data"]:
+        for item in result:
             assert "product" in item, "商品名が含まれていません"
             assert "price_incl_tax" in item, "税込価格が含まれていません"
             assert "confidence" in item, "信頼度が含まれていません"

@@ -268,11 +268,15 @@ class OCRProcessor:
         except Exception:
             return 0.5  # デフォルト値
     
-    def _extract_text_mock(self, _: np.ndarray) -> Dict[str, Any]:
+    def _extract_text_mock(self, image_data: np.ndarray) -> Dict[str, Any]:
         """モックモード用のテキスト抽出"""
+        # 画像データのバリデーション（実際の処理と同じ）
+        if image_data.size == 0:
+            raise ValueError("空の画像データです")
+        
         # モックデータを返す
         return {
-            'full_text': 'Mock Text Sample \u30e2\u30c3\u30af\u30c6\u30ad\u30b9\u30c8',
+            'full_text': 'Mock Text Sample モックテキスト',
             'text_annotations': [
                 {
                     'text': 'Mock',

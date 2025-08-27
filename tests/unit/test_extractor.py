@@ -28,8 +28,8 @@ class TestProductPriceExtractor:
         assert hasattr(extractor, 'calculate_confidence_score')
 
     def test_extract_product_price_pairs_basic(self):
-        """基本的な商品・価格ペア抽出テスト（TDD: 未実装確認）"""
-        # TDD第1ステップ: 実装前はNotImplementedErrorが発生することを確認
+        """基本的な商品・価格ペア抽出テスト"""
+        # OCR結果から商品・価格ペアの抽出をテスト
         ocr_result = {
             'text_annotations': [
                 {'text': 'きゅうり', 'bounding_box': (10, 10, 80, 30)},
@@ -37,8 +37,19 @@ class TestProductPriceExtractor:
             ],
             'full_text': 'きゅうり 198円'
         }
-        with pytest.raises(NotImplementedError, match="T041で実装予定"):
-            self.extractor.extract_product_price_pairs(ocr_result)
+        result = self.extractor.extract_product_price_pairs(ocr_result)
+        
+        # 結果の検証
+        assert isinstance(result, list)
+        assert len(result) > 0
+        
+        # 最初のペアの検証
+        first_pair = result[0]
+        assert 'product' in first_pair
+        assert 'price_incl_tax' in first_pair
+        assert 'confidence' in first_pair
+        assert isinstance(first_pair['confidence'], float)
+        assert 0.0 <= first_pair['confidence'] <= 1.0
 
     def test_detect_price_patterns_basic(self):
         """基本的な価格パターン認識テスト（TDD: 未実装確認）"""

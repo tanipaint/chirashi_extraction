@@ -275,7 +275,9 @@ class ProductCategorizer:
         try:
             prompt = self._create_categorization_prompt(product_name)
             
-            response = openai.ChatCompletion.create(
+            from openai import OpenAI
+            client = OpenAI()
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "あなたは商品カテゴリ分類の専門家です。"},
