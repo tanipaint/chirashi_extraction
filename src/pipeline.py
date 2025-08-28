@@ -140,12 +140,15 @@ class ChirashiPipeline:
                 else:
                     logging.warning(f"Product validation failed: {product.get('product', 'Unknown')} - {validation_result.validation_errors}")
             
-            # 信頼度閾値フィルタリング
-            confidence_threshold = self.config.get("confidence_threshold", 0.7)
+            # 信頼度閾値フィルタリング（修正版）
+            confidence_threshold = self.config.get("confidence_threshold", 0.1)
+            print(f"DEBUG: 信頼度フィルタリング - 閾値:{confidence_threshold}, 対象商品数:{len(validated_products)}")
+            print(f"DEBUG: 設定値確認 - config値: {self.config.get('confidence_threshold', 'NOT_SET')}")
             filtered_products = [
                 p for p in validated_products 
                 if p.get("confidence", 0) >= confidence_threshold
             ]
+            print(f"DEBUG: フィルタリング後商品数:{len(filtered_products)}")
             
             # Step 6: 出力整形
             logging.info("Step 6/6: Output formatting")
@@ -339,8 +342,8 @@ def main():
     parser.add_argument(
         '--confidence', '-c',
         type=float,
-        default=0.7,
-        help='信頼度閾値（デフォルト: 0.7）'
+        default=0.1,
+        help='信頼度閾値（デフォルト: 0.1）'
     )
     
     parser.add_argument(

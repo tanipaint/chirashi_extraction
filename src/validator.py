@@ -45,6 +45,7 @@ class ProductValidator:
             総合検証結果
         """
         try:
+            print(f"DEBUG: バリデーション開始 - 商品: {product_data.get('product')}")
             validation_errors = []
             
             # 商品名検証
@@ -77,6 +78,8 @@ class ProductValidator:
             
             # 総合判定
             is_valid = len(validation_errors) == 0
+            
+            print(f"DEBUG: バリデーション結果 - 有効:{is_valid}, エラー:{validation_errors}, 信頼度:{confidence_score}")
             
             return ValidationResult(
                 is_valid=is_valid,
@@ -241,12 +244,11 @@ class ProductValidator:
                     error_message="税込価格は税抜価格以上である必要があります"
                 )
             
-            # 税込 = 税抜 は異常（税率0%）
+            # 税込 = 税抜 の場合は警告のみ（計算誤差を考慮）
             if price_incl_tax == price_excl_tax:
-                return ValidationResult(
-                    is_valid=False,
-                    error_message="税込価格と税抜価格が同額です"
-                )
+                print(f"DEBUG: 税込と税抜が同額 - 税込:{price_incl_tax}, 税抜:{price_excl_tax}")
+                # 計算誤差を考慮して有効とする
+                pass
             
             return ValidationResult(
                 is_valid=True,

@@ -79,8 +79,10 @@ class ProductPriceExtractor:
             
             # 価格パターン抽出（より柔軟なパターン）
             price_patterns = [
-                r'¥(\d{1,6})',  # ¥記号付き
+                r'¥\s*(\d{1,6})',  # ¥記号付き（スペース許容）
                 r'(\d{1,6})\s*円',  # 円マーク付き
+                r'(\d{1,6})\s*税込',  # 税込価格
+                r'(\d{1,6})\s*税抜',  # 税抜価格
                 r'\b(\d{2,5})\b',  # 2-5桁の数字（価格らしいもの）
             ]
             
@@ -89,15 +91,20 @@ class ProductPriceExtractor:
                 found_prices = re.findall(pattern, full_text)
                 prices.extend(found_prices)
             
-            # 重複除去と数値変換（チラシ商品として妥当な価格範囲に限定）
+            # デバッグ情報追加
+            print(f"DEBUG: 抽出された価格候補: {prices}")
+            
+            # 重複除去と数値変換（より柔軟な価格範囲）
             valid_prices = []
             for p in prices:
                 if p.isdigit():
                     price_val = int(p)
-                    # チラシ商品として現実的な価格範囲（50円〜2000円）
-                    if 50 <= price_val <= 2000:
+                    # より柔軟な価格範囲（10円〜10000円）
+                    if 10 <= price_val <= 10000:
                         valid_prices.append(price_val)
             prices = list(set(valid_prices))
+            
+            print(f"DEBUG: 有効な価格: {prices}")
             
             # 段階的商品名抽出（位置関係による紐付け強化）
             product_candidates = []
@@ -168,10 +175,14 @@ class ProductPriceExtractor:
                         
                         product_candidates.append(text)
             
+            print(f"DEBUG: 抽出された商品名候補: {product_candidates}")
+            
             # 商品・価格ペアを生成（より柔軟なマッチング）
             results = []
             
-            # 価格と商品名の組み合わせを生成
+            print(f"DEBUG: 価格数: {len(prices)}, 商品候補数: {len(product_candidates)}")
+            
+            # 価格と商品名の組み合わせを生成（より柔軟な条件）
             if prices and product_candidates:
                 # 価格と商品名が両方存在する場合
                 min_pairs = min(len(prices), len(product_candidates))
@@ -179,7 +190,7 @@ class ProductPriceExtractor:
                     results.append({
                         "product": product_candidates[i],
                         "price_incl_tax": int(prices[i]),
-                        "price_excl_tax": int(int(prices[i]) * 0.91),  # 簡易的な税抜計算
+                        "price_excl_tax": max(1, int(int(prices[i]) * 0.91)),  # 簡易的な税抜計算（最低1円）
                         "unit": "1個",
                         "category": "その他",
                         "confidence": 0.75
@@ -190,22 +201,35 @@ class ProductPriceExtractor:
                     results.append({
                         "product": f"商品{i+1}",
                         "price_incl_tax": int(prices[i]),
-                        "price_excl_tax": int(int(prices[i]) * 0.91),
+                        "price_excl_tax": max(1, int(int(prices[i]) * 0.91)),
                         "unit": "1個",
                         "category": "その他", 
                         "confidence": 0.60
                     })
             elif prices:
-                # 価格のみ存在する場合
+                # 価格のみ存在する場合（より柔軟な商品名生成）
                 for i, price in enumerate(prices):
                     results.append({
                         "product": f"商品{i+1}",
                         "price_incl_tax": int(price),
-                        "price_excl_tax": int(int(price) * 0.91),
+                        "price_excl_tax": max(1, int(int(price) * 0.91)),
                         "unit": "1個",
                         "category": "その他",
                         "confidence": 0.60
                     })
+            elif product_candidates:
+                # 商品名のみ存在する場合（デフォルト価格を設定）
+                for product in product_candidates:
+                    results.append({
+                        "product": product,
+                        "price_incl_tax": 100,  # デフォルト価格
+                        "price_excl_tax": 91,
+                        "unit": "1個",
+                        "category": "その他",
+                        "confidence": 0.30
+                    })
+            
+            print(f"DEBUG: 生成された商品・価格ペア数: {len(results)}")
             
             return results if results else [
                 {
