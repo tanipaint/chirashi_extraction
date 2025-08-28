@@ -99,12 +99,25 @@ class ProductPriceExtractor:
                         valid_prices.append(price_val)
             prices = list(set(valid_prices))
             
-            # 商品名候補抽出（価格や広告文言を除外した適切な商品名のみ）
+            # 段階的商品名抽出（位置関係による紐付け強化）
             product_candidates = []
-            # 全ての価格パターンを結合した正規表現を作成
+            
+            # 価格を含む注釈の座標情報を取得
+            price_annotations = []
             combined_price_pattern = '|'.join(price_patterns)
             
-            # 除外すべき広告文言・キーワードのブラックリスト
+            for annotation in text_annotations:
+                text = annotation.get('text', '').strip()
+                if re.search(combined_price_pattern, text):
+                    # 価格が含まれる注釈の位置情報を保存
+                    bbox = annotation.get('bounding_poly', {}).get('vertices', [])
+                    if bbox:
+                        price_annotations.append({
+                            'text': text,
+                            'bbox': bbox
+                        })
+            
+            # 拡張ブラックリスト（形容詞・副詞・説明文を除外）
             blacklist_keywords = [
                 '税込', '税抜', '円', '¥', '買得', '特価', '限定', '販売', '開催',
                 'から', 'まで', '夜市', 'セール', 'フェア', '割引', '安売',
@@ -114,22 +127,46 @@ class ProductPriceExtractor:
                 'コード', 'カード', 'ポイント', 'クレジット', 'タッチ', 'スマホ',
                 'マーク', 'ウイン', 'ステー', 'カット', 'アタカマ', 'いっぱい',
                 'ごゆっくり', 'なかっ', 'したたり', 'あらん', 'まるき', '商品',
-                'エンジョイ', 'プレゼント', 'キャンペーン', 'プレッション', 'インテリア'
+                'エンジョイ', 'プレゼント', 'キャンペーン', 'プレッション', 'インテリア',
+                # 形容詞・副詞・説明文の除外を強化
+                'オススメ', '夏休み', '日帰り', 'いきいき', '涼しく', 'かしこく',
+                '暮らす', 'こちら', 'ラクラク', 'ひんやり', '冷やす', 'すっきり',
+                '快適', '便利', 'お得', 'おすすめ', 'らくらく', 'すやすや',
+                'ぐっすり', 'さらさら', 'ふわふわ', 'しっかり', 'たっぷり',
+                'ちょっと', 'ほんのり', 'じっくり', 'ゆっくり', '毎日', '今日'
             ]
             
             for annotation in text_annotations:
                 text = annotation.get('text', '').strip()
                 
-                # 以下の条件をすべて満たす場合のみ商品名候補とする
+                # 段階1: 基本的な商品名候補フィルタリング
                 if (not re.search(combined_price_pattern, text) and  # 価格パターンでない
-                    len(text) >= 3 and len(text) <= 20 and  # 3-20文字の適切な長さ
-                    re.search(r'[ぁ-んァ-ンー一-龯]{2,}', text) and  # 日本語文字を2文字以上含む
-                    not any(keyword in text for keyword in blacklist_keywords) and  # ブラックリスト語句を含まない
-                    not re.match(r'^[0-9\s\-\/]+$', text) and  # 数字・記号のみでない
-                    not re.match(r'^[a-zA-Z\s]+$', text) and  # アルファベットのみでない
-                    not re.match(r'^[ひらがな]{1,3}$', text)):  # 短いひらがなのみでない
+                    len(text) >= 3 and len(text) <= 20):  # 適切な長さ
                     
-                    product_candidates.append(text)
+                    # 段階2: 商品名パターンの厳格化（名詞重視）
+                    is_product_candidate = False
+                    
+                    # カタカナ商品名（優先）
+                    if re.match(r'^[ァ-ンー]+$', text) and len(text) >= 3:
+                        is_product_candidate = True
+                    
+                    # 漢字+ひらがな混在の名詞パターン
+                    elif re.search(r'[一-龯]', text) and re.search(r'[ぁ-ん]', text) and len(text) >= 3:
+                        # 動詞・形容詞の語尾パターンを除外
+                        if not re.search(r'(する|した|される|れる|い|く|に|を|が|は|の|で|と|から|まで|より|ほど|だけ|など|ない|ある|いる|なる|くる)$', text):
+                            is_product_candidate = True
+                    
+                    # 漢字のみの名詞（2文字以上）
+                    elif re.match(r'^[一-龯]{2,}$', text):
+                        is_product_candidate = True
+                    
+                    # 段階3: ブラックリスト適用
+                    if (is_product_candidate and 
+                        not any(keyword in text for keyword in blacklist_keywords) and
+                        not re.match(r'^[0-9\s\-\/]+$', text) and  # 数字・記号のみでない
+                        not re.match(r'^[a-zA-Z\s]+$', text)):  # アルファベットのみでない
+                        
+                        product_candidates.append(text)
             
             # 商品・価格ペアを生成（より柔軟なマッチング）
             results = []
